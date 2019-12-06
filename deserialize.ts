@@ -15,19 +15,24 @@ export abstract class Deserializeable {
 
 // don't use directly. Convert your types to a class that extends Deserializable and implements the static `deserialize` method,
 // then use the Class.deserialize function when doing deserialization. Wish we had traits instead of classes to let type inference do this magic for us :'(
-export const deserializer = <T>(deserializers: {
-  [key: string]: JsonPropDeserializer<T>;
-  // unfortunately [K in keyof T]? still causes TS to think that T can only contain the keys included in deserializers, even though it's supposed to be a partial???
-  // because of this, we can't verify with duck-type safety that deserializer implementations conform to the output type we're expecting.
-  // luckily, this shouldn't be too much of an issue, as this kind of thing throws a typeError in development mode during runtime
-}) => (json: Json<T>): T =>
-  [...Object.entries(deserializers)].reduce(
-    (
-      deserialized,
-      [key, propDeserializer]: [string, JsonPropDeserializer<T>]
-    ) => ({
-      ...deserialized,
-      [key]: propDeserializer(json[key], json)
-    }),
+export const deserializer = <T>(
+  deserializers: {
+    [key: string]: JsonPropDeserializer<T>;
+    // unfortunately [K in keyof T]? still causes TS to think that T can only contain the keys included in deserializers, even though it's supposed to be a partial???
+    // because of this, we can't verify with duck-type safety that deserializer implementations conform to the output type we're expecting.
+  }[]
+) => (json: Json<T>): T =>
+  deserializers.reduce(
+    (deserialized, deserializeMap) =>
+      Object.entries(deserializeMap).reduce(
+        (
+          deserializedInner,
+          [key, propDeserializer]: [string, JsonPropDeserializer<T>]
+        ) => ({
+          ...deserializedInner,
+          [key]: propDeserializer(json[key], json)
+        }),
+        deserialized
+      ),
     json
   ) as T;

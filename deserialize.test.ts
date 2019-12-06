@@ -17,12 +17,16 @@ class TestType implements Deserializeable {
   date: Date;
   rebind: { inner: object };
 
-  static deserialize = deserializer<TestType>({
-    date: Date,
-    rebind: (_, { inner }) => ({ inner }),
-    // so unfortunately manual type ascription seems inevitable for now - no worries
-    subType: ({ date }: { date: string }) => ({ date: new Date(date) })
-  });
+  static deserialize = deserializer<TestType>([
+    {
+      date: Date,
+      // so unfortunately manual type ascription seems inevitable for now - no worries
+      subType: ({ date }: { date: string }) => ({ date: new Date(date) })
+    },
+    {
+      rebind: (_, { inner }) => ({ inner })
+    }
+  ]);
 }
 
 describe("Deserializeable", () => {
